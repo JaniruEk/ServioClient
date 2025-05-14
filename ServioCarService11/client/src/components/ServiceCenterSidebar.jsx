@@ -43,14 +43,12 @@ const ServiceCenterSidebar = ({ activePath }) => {
     } catch (err) {
       console.error("Logout failed:", err);
     }
-  };
-
-  const sidebarItems = [
+  };  const sidebarItems = [
     { text: "Dashboard", path: "/service-center-home", icon: <HomeIcon className="h-6 w-6" /> },
-    { text: "Profile", path: "/service-center/profile", icon: <UserIcon className="h-6 w-6" /> },
-    { text: "Job Reservations", path: "/service-center/job-reservations", icon: <ListBulletIcon className="h-6 w-6" /> },
-    { text: "Reports & Analytics", path: "/service-center/reports", icon: <DocumentChartBarIcon className="h-6 w-6" /> },
-    { text: "Spare Parts", path: "/service-center/spare-parts", icon: <CubeIcon className="h-6 w-6" /> },
+    { text: "Job List", path: "/service-center/job-list", icon: <ListBulletIcon className="h-6 w-6" /> },
+    { text: "Spare Parts Inventory", path: "/spare-parts-inventory", icon: <CubeIcon className="h-6 w-6" /> },
+    { text: "Reports & Analytics", path: "/report-and-analyse", icon: <DocumentChartBarIcon className="h-6 w-6" /> },
+    { text: "Edit Profile", path: "/service-center/edit-profile", icon: <UserIcon className="h-6 w-6" /> },
     { text: "Logout", path: "/logout", icon: <ArrowRightOnRectangleIcon className="h-6 w-6" /> },
   ];
 

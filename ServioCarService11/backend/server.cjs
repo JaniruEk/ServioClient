@@ -9,6 +9,7 @@ const { admin, db, auth } = require('./firebase.config.js');
 const jobRoutes = require('./routes/job.routes');
 const technicianRoutes = require('./routes/technician.routes');
 const vehiclePartsRoutes = require('./routes/vehicleParts.routes');
+const sparePartsRoutes = require('./routes/spareParts.routes');
 const serviceCenterRoutes = require('./routes/serviceCenter.routes');
 const dataRoutes = require('./routes/data.routes');
 const paymentRoutes = require('./routes/payment.routes');
@@ -25,6 +26,7 @@ app.locals.auth = auth;
 app.use('/api/jobs', jobRoutes);
 app.use('/api/technicians', technicianRoutes);
 app.use('/api/parts', vehiclePartsRoutes);
+app.use('/api/spare-parts', sparePartsRoutes);
 app.use('/api/service-centers', serviceCenterRoutes);
 app.use('/api/data', dataRoutes); // New unified data API
 app.use('/api/payment', paymentRoutes); // Payment API

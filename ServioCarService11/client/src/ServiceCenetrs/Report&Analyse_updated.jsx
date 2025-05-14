@@ -35,20 +35,13 @@ const ReportAndAnalyse = () => {
     sparePartsUsed: 0,
   });
 
-  // State for custom report
-  const [customReport, setCustomReport] = useState({ title: "", description: "", image: "" });
-  const [previewImage, setPreviewImage] = useState(null);
-  const [newImage, setNewImage] = useState(null);
-  const [reports, setReports] = useState([]);
-  const [showReportModal, setShowReportModal] = useState(false);
-
   // State for charts
   const [lineChartData, setLineChartData] = useState({
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: [],
     datasets: [
       {
         label: "Jobs Completed",
-        data: [20, 25, 30, 35, 40, 45],
+        data: [],
         borderColor: "rgba(239, 68, 68, 1)", // Red to match theme
         backgroundColor: "rgba(239, 68, 68, 0.2)",
         fill: true,
@@ -58,18 +51,25 @@ const ReportAndAnalyse = () => {
   });
 
   const [pieChartData, setPieChartData] = useState({
-    labels: ["Oil Changes", "Brake Repairs", "Tire Services"],
+    labels: [],
     datasets: [
       {
         label: "Revenue Breakdown",
-        data: [5000, 7500, 2750.5],
+        data: [],
         backgroundColor: ["rgba(239, 68, 68, 0.8)", "rgba(16, 185, 129, 0.8)", "rgba(234, 179, 8, 0.8)"],
         borderColor: ["rgba(239, 68, 68, 1)", "rgba(16, 185, 129, 1)", "rgba(234, 179, 8, 1)"],
         borderWidth: 1,
       },
     ],
   });
-  
+
+  // State for custom report
+  const [customReport, setCustomReport] = useState({ title: "", description: "", image: "" });
+  const [previewImage, setPreviewImage] = useState(null);
+  const [newImage, setNewImage] = useState(null);
+  const [reports, setReports] = useState([]);
+  const [showReportModal, setShowReportModal] = useState(false);
+
   // Effect to get the current user and service center ID
   useEffect(() => {
     const fetchUserData = async () => {
@@ -305,7 +305,7 @@ const ReportAndAnalyse = () => {
       throw err;
     }
   };
-
+  
   // Chart options
   const chartOptions = {
     responsive: true,
@@ -353,6 +353,42 @@ const ReportAndAnalyse = () => {
     setNewImage(null);
     setShowReportModal(false);
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-900 text-white font-sans bg-cover bg-center relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/40"></div>
+        <div className="flex flex-1 relative z-10 justify-center items-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Loading Reports & Analytics...</h2>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-900 text-white font-sans bg-cover bg-center relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/40"></div>
+        <div className="flex flex-1 relative z-10 justify-center items-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Error Loading Reports</h2>
+            <p className="text-red-500 mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

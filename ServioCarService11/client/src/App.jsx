@@ -55,6 +55,7 @@ import JobList from "./ServiceCenetrs/JobList";
 import ServiceCenterPendingJob from "./ServiceCenetrs/PendingJob";
 import SparePartsInventory from "./ServiceCenetrs/SparePartsInventory";
 import ReportAndAnalyse from "./ServiceCenetrs/Report&Analyse";
+import ServiceCenterEditProfile from "./ServiceCenetrs/EditProfile";
 
 // Components
 import UserProfile from "./components/UserProfile";
@@ -424,12 +425,19 @@ function App() {
               <SparePartsInventory />
             </ProtectedRoute>
           }
-        />
-        <Route
+        />        <Route
           path="/report-and-analyse"
           element={
             <ProtectedRoute allowedCategories={["service-center"]}>
               <ReportAndAnalyse />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/service-center/edit-profile"
+          element={
+            <ProtectedRoute allowedCategories={["service-center"]}>
+              <ServiceCenterEditProfile />
             </ProtectedRoute>
           }
         />

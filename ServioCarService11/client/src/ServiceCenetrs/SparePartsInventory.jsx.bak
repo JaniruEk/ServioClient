@@ -14,8 +14,7 @@ import {
 import ServiceCenterSidebar from "../components/ServiceCenterSidebar";
 import Footer from "../components/Footer";
 import sparePartsService from "../services/spareParts.service";
-import { auth, db } from "../firebase";
-import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc, getDoc } from "firebase/firestore";
+import { auth } from "../firebase";
 import seedSpareParts from "../seedSpareParts";
 
 const SparePartsInventory = () => {
@@ -29,13 +28,14 @@ const SparePartsInventory = () => {
   const [filterCategory, setFilterCategory] = useState("All Categories");
   const [showAddModal, setShowAddModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editingId, setEditingId] = useState(null);  const [newPart, setNewPart] = useState({
-    name: "",
+  const [editingId, setEditingId] = useState(null);
+  const [newPart, setNewPart] = useState({
+    partName: "",
     category: "",
     quantity: 0,
     price: 0,
-    threshold: 5,
-    image: "",
+    minStockLevel: 5,
+    imageUrl: "",
     partNumber: "",
     manufacturer: "",
     description: "",
@@ -107,22 +107,21 @@ const SparePartsInventory = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewPart({ ...newPart, [name]: value });
-  };  const handleAddOrUpdatePart = async (e) => {
+  };
+  const handleAddOrUpdatePart = async (e) => {
     e.preventDefault();
     setLoading(true);
     
     try {
       if (isEditing) {
         // Update existing part
-        const response = await sparePartsService.updateSparePart(editingId, newPart);
+        const response = await sparePartsService.updateSparePart(newPart.id, newPart);
         
         if (response.success) {
           setParts(parts.map(part => 
-            part.id === editingId ? { ...response.data } : part
+            part.id === newPart.id ? { ...newPart } : part
           ));
           setIsEditing(false);
-          setSuccessMessage("Part updated successfully");
-          setTimeout(() => setSuccessMessage(""), 3000);
         } else {
           setError(response.error);
         }
@@ -132,8 +131,6 @@ const SparePartsInventory = () => {
         
         if (response.success) {
           setParts([...parts, response.data]);
-          setSuccessMessage("Part added successfully");
-          setTimeout(() => setSuccessMessage(""), 3000);
         } else {
           setError(response.error);
         }
@@ -145,13 +142,9 @@ const SparePartsInventory = () => {
         category: "",
         quantity: 0,
         price: 0,
-        threshold: 5,
+        threshold: 0,
         image: "",
-        partNumber: "",
-        manufacturer: "",
-        description: "",
       });
-      setEditingId(null);
       setShowAddModal(false);
     } catch (err) {
       console.error("Error saving part:", err);
@@ -160,9 +153,9 @@ const SparePartsInventory = () => {
       setLoading(false);
     }
   };
+
   const handleEditPart = (part) => {
     setNewPart({ ...part });
-    setEditingId(part.id);
     setIsEditing(true);
     setShowAddModal(true);
   };
@@ -219,40 +212,10 @@ const SparePartsInventory = () => {
     >
       <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/40"></div>
       <div className="flex flex-1 relative z-10">
-        <ServiceCenterSidebar activePath="/spare-parts-inventory" />        <main className="flex-1 max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          {/* Status Messages */}
-          {successMessage && (
-            <div className="bg-green-600/80 text-white p-4 rounded-lg mb-6 flex items-center justify-between shadow-lg backdrop-blur-sm">
-              <div className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 mr-2" />
-                <span>{successMessage}</span>
-              </div>
-              <button 
-                onClick={() => setSuccessMessage("")}
-                className="text-white hover:text-gray-200"
-              >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </div>
-          )}
-          
-          {error && (
-            <div className="bg-red-600/80 text-white p-4 rounded-lg mb-6 flex items-center justify-between shadow-lg backdrop-blur-sm">
-              <div className="flex items-center">
-                <ExclamationCircleIcon className="h-5 w-5 mr-2" />
-                <span>{error}</span>
-              </div>
-              <button 
-                onClick={() => setError(null)}
-                className="text-white hover:text-gray-200"
-              >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </div>
-          )}
-          
-          <header className="bg-white/10 backdrop-blur-md text-white p-6 rounded-lg mb-6 flex justify-between items-center shadow-lg">
-            <div>
+        <ServiceCenterSidebar activePath="/spare-parts-inventory" />
+
+        <main className="flex-1 max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+          <header className="bg-white/10 backdrop-blur-md text-white p-6 rounded-lg mb-6 flex justify-between items-center shadow-lg">          <div>
               <h1 className="text-3xl font-extrabold font-[Poppins] tracking-tight">Spare Parts Inventory</h1>
               <p className="text-sm mt-1 font-[Open Sans] text-gray-300">Manage your spare parts stock</p>
             </div>
@@ -270,9 +233,10 @@ const SparePartsInventory = () => {
                 className="group flex items-center gap-2 text-red-500 hover:text-red-400 transition-all duration-200 ease-in-out"
               >
                 <ArrowLeftIcon className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
-                <span className="font-[Open Sans]">Back to Dashboard</span>
               </Link>
             </div>
+              <span className="font-[Open Sans]">Back to Dashboard</span>
+            </Link>
           </header>
 
           {/* Parts Management */}
@@ -424,27 +388,6 @@ const SparePartsInventory = () => {
                       min="0"
                       required
                     />
-                  </div>                  <div>
-                    <label className="block mb-1 text-gray-300">Part Number (optional)</label>
-                    <input
-                      type="text"
-                      name="partNumber"
-                      value={newPart.partNumber}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border rounded-md bg-gray-700 border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="e.g., ENG-12345"
-                    />
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-gray-300">Manufacturer (optional)</label>
-                    <input
-                      type="text"
-                      name="manufacturer"
-                      value={newPart.manufacturer}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border rounded-md bg-gray-700 border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="e.g., Toyota, Generic"
-                    />
                   </div>
                   <div>
                     <label className="block mb-1 text-gray-300">Image URL (optional)</label>
@@ -457,33 +400,19 @@ const SparePartsInventory = () => {
                       placeholder="e.g., https://example.com/image.jpg"
                     />
                   </div>
-                  <div>
-                    <label className="block mb-1 text-gray-300">Description (optional)</label>
-                    <textarea
-                      name="description"
-                      value={newPart.description}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border rounded-md bg-gray-700 border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                      placeholder="Enter a description for this part"
-                      rows="2"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">                    <button
+                  <div className="flex justify-end gap-2">
+                    <button
                       type="button"
                       onClick={() => {
                         setShowAddModal(false);
                         setIsEditing(false);
-                        setEditingId(null);
                         setNewPart({
                           name: "",
                           category: "",
                           quantity: 0,
                           price: 0,
-                          threshold: 5,
+                          threshold: 0,
                           image: "",
-                          partNumber: "",
-                          manufacturer: "",
-                          description: "",
                         });
                       }}
                       className="px-4 py-2 rounded-md bg-gray-600 text-white hover:bg-gray-500 hover:scale-105 transition-all duration-200 ease-in-out transform"

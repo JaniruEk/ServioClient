@@ -13,7 +13,7 @@ import {
   DocumentTextIcon,
   CheckCircleIcon,
   CurrencyDollarIcon,
-  CarIcon,
+  TruckIcon,
 } from "@heroicons/react/24/solid";
 import ServiceCenterSidebar from "../components/ServiceCenterSidebar";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
@@ -483,7 +483,7 @@ const JobDetails = () => {
                 {/* Vehicle Information */}
                 <section className="bg-white/10 backdrop-blur-md p-6 rounded-lg shadow-lg">
                   <h2 className="text-xl font-bold text-white mb-4 flex items-center font-[Raleway]">
-                    <CarIcon className="h-5 w-5 text-red-500 mr-2" />
+                    <TruckIcon className="h-5 w-5 text-red-500 mr-2" />
                     Vehicle Information
                   </h2>
                   

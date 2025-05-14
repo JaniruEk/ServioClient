@@ -125,7 +125,6 @@ const EditProfile = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setUpdating(true);
@@ -141,14 +140,37 @@ const EditProfile = () => {
           : []
       };
       
-      // Update service center profile using the service
+      // First update Firestore with the new data
+      if (user) {
+        const userDocRef = doc(db, "users", user.uid);
+        
+        // Update the user document with the basic profile info
+        await updateDoc(userDocRef, {
+          name: formattedData.name,
+          phone: formattedData.phone,
+          address: formattedData.address,
+          certification: formattedData.certification,
+          description: formattedData.description,
+          serviceTypes: formattedData.serviceTypes,
+          website: formattedData.website,
+          updatedAt: new Date().toISOString()
+        });
+        
+        console.log("Firebase profile data updated successfully");
+      }
+      
+      // Then try to update the backend API service
       const response = await serviceCenterService.updateServiceCenterProfile(formattedData);
       
       if (response.success) {
         setSuccessMessage("Profile updated successfully!");
         setServiceCenterData({...serviceCenterData, ...formattedData});
+      } else if (response.isNetworkError) {
+        // If backend is unavailable, still show success since Firebase update worked
+        setSuccessMessage("Profile updated locally. Will sync with server when connection is restored.");
+        setServiceCenterData({...serviceCenterData, ...formattedData});
       } else {
-        throw new Error(response.error || "Failed to update profile");
+        throw new Error(response.error || "Failed to update profile on server");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -167,7 +189,7 @@ const EditProfile = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
       <div className="flex flex-1 relative">
-        <ServiceCenterSidebar activePath="/edit-profile" />
+        <ServiceCenterSidebar activePath="/service-center/edit-profile" />
 
         <button
           className="md:hidden fixed top-4 left-4 z-30 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 hover:scale-110 transition-all duration-200 ease-in-out"
