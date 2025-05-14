@@ -1,0 +1,226 @@
+// src/App.jsx
+import { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from './firebase';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import Login from './pages/Login';
+import CategorySelection from './pages/CategorySelection';
+import OwnerSignUp from './pages/OwnerSignUp';
+import TechnicianSignUp from './pages/TechnicianSignUp';
+import ServiceCenterSignUp from './pages/ServiceCenterSignUp';
+import GuestHome from './pages/GuestHome';
+import AboutUs from './pages/AboutUs';
+import Contact from './pages/Contact';
+import AdminDashboard from '../client/src/admin/AdminDashboard';
+import TechnicianDashboard from '../client/src/Technician/TechnicianDashboard'; 
+import OwnerHome from './pages/OwnerHome'; // Assuming you have an OwnerHome component
+import ContactTechnician from './pages/contactTechnician';
+import BookServiceCenter from './pages/BookServiceCenter';
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true);
+      if (currentUser) {
+        try {
+          const userDocRef = doc(db, 'users', currentUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            setUserData(userDoc.data());
+            console.log('User data fetched:', userDoc.data());
+          } else {
+            console.log('No user data found in Firestore');
+            setUserData(null);
+          }
+          setUser(currentUser);
+        } catch (err) {
+          console.error('Error fetching user data:', err);
+        }
+      } else {
+        setUser(null);
+        setUserData(null);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Animation Variants (from AboutUs/AdminDashboard)
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.3,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+    hover: { scale: 1.05, transition: { duration: 0.3 } },
+  };
+
+  const AuthLayout = ({ children }) => (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="min-h-screen flex items-center justify-center bg-gray-900 p-4 bg-cover bg-center relative"
+      style={{
+        backgroundImage: `url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80')`,
+      }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/40"></div>
+      <motion.div
+        variants={itemVariants}
+        className="relative w-full max-w-md p-6 bg-white/10 backdrop-blur-md rounded-xl shadow-2xl border border-gray-700/50"
+      >
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+
+  const UserProfile = () => (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col items-center gap-6"
+    >
+      {loading ? (
+        <svg
+          className="animate-spin h-8 w-8 text-red-500"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+      ) : (
+        <>
+          <motion.p
+            variants={itemVariants}
+            className="text-lg font-medium text-red-500 bg-red-100/20 p-3 rounded-md shadow-sm font-[Open Sans]"
+          >
+            Welcome, {user.email}!
+          </motion.p>
+          {userData ? (
+            <motion.div
+              variants={itemVariants}
+              className="w-full bg-gray-800 p-4 rounded-lg shadow-inner border border-gray-700/50"
+            >
+              <h3 className="text-xl font-semibold text-white mb-4 text-center font-[Poppins]">
+                Your Profile
+              </h3>
+              <div className="text-gray-300 space-y-2 font-[Open Sans]">
+                <p>
+                  <span className="font-medium text-white">User ID:</span> {userData.userId}
+                </p>
+                <p>
+                  <span className="font-medium text-white">Category:</span> {userData.category}
+                </p>
+                <p>
+                  <span className="font-medium text-white">Name:</span> {userData.name}
+                </p>
+                {userData.category === 'owner' && (
+                  <>
+                    <p>
+                      <span className="font-medium text-white">Car:</span> {userData.carMake}{' '}
+                      {userData.carModel}
+                    </p>
+                    <p>
+                      <span className="font-medium text-white">Number Plate:</span>{' '}
+                      {userData.numberPlate}
+                    </p>
+                    <p>
+                      <span className="font-medium text-white">VIN:</span> {userData.vinNumber}
+                    </p>
+                  </>
+                )}
+                {userData.category === 'technician' && (
+                  <>
+                    <p>
+                      <span className="font-medium text-white">Specialization:</span>{' '}
+                      {userData.specialization}
+                    </p>
+                    <p>
+                      <span className="font-medium text-white">Age:</span> {userData.age}
+                    </p>
+                  </>
+                )}
+                {userData.category === 'service-center' && (
+                  <>
+                    <p>
+                      <span className="font-medium text-white">Certification:</span>{' '}
+                      {userData.certification}
+                    </p>
+                    <p>
+                      <span className="font-medium text-white">Address:</span> {userData.address}
+                    </p>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.p variants={itemVariants} className="text-red-400 font-[Open Sans]">
+              No profile data found.
+            </motion.p>
+          )}
+          <motion.button
+            variants={itemVariants}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => auth.signOut()}
+            className="p-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform"
+          >
+            Logout
+          </motion.button>
+        </>
+      )}
+    </motion.div>
+  );
+
+  return (
+    <Router>
+      <Routes>
+        <Route
+          path="/"
+          element={user ? <AuthLayout><UserProfile /></AuthLayout> : <GuestHome user={user} />}
+        />
+        <Route path="/login" element={user ? <Navigate to="/" /> : <AuthLayout><Login /></AuthLayout>} />
+        <Route path="/signup" element={user ? <Navigate to="/" /> : <AuthLayout><CategorySelection /></AuthLayout>} />
+        <Route path="/signup/owner" element={user ? <Navigate to="/" /> : <AuthLayout><OwnerSignUp /></AuthLayout>} />
+        <Route path="/signup/technician" element={user ? <Navigate to="/" /> : <AuthLayout><TechnicianSignUp /></AuthLayout>} />
+        <Route path="/signup/service-center" element={user ? <Navigate to="/" /> : <AuthLayout><ServiceCenterSignUp /></AuthLayout>} />
+        <Route path="/book-service" element={<div>Book Service Page (TBD)</div>} />
+        <Route path="/contact" element={<Contact user={user} />} />
+        <Route path="/about-us" element={<AboutUs user={user} />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/profile" element={user ? <AuthLayout><UserProfile /></AuthLayout> : <Navigate to="/login" />} />
+        <Route path="/technician-home" element={<TechnicianDashboard />} /> {/* Bypassed authentication for testing */}
+        <Route path="/job-list" element={<div>Job List Page (TBD)</div>} />
+        <Route path="/parts-request" element={<div>Parts Request Page (TBD)</div>} />
+        <Route path="/job-details/:id" element={<div>Job Details Page (TBD)</div>} />
+        <Route path="/owner-home" element={<OwnerHome />} />
+        <Route path="/contact-technician" element={<ContactTechnician />}/>
+        <Route path="/book-service-center" element={<BookServiceCenter />}/>
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
