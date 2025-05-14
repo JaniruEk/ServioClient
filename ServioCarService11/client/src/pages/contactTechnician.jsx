@@ -4,7 +4,7 @@ import { Bars3Icon, UserIcon } from '@heroicons/react/24/solid';
 import Footer from '../components/Footer';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, db, calculateDailyRate } from '../firebase';
 import OwnerSidebar from '../components/OwnerSidebar';
 
 function ContactTechnician({ user }) {
@@ -134,9 +134,9 @@ function ContactTechnician({ user }) {
       
       const bookingsCollectionRef = collection(db, "bookings");
       const newBookingRef = await addDoc(bookingsCollectionRef, basicBookingData);
-      
+
       console.log('Booking created with ID:', newBookingRef.id);
-        // Also save to technicianreservations collection for technician access
+      // Also save to technicianreservations collection for technician access
       console.log('Saving to technicianreservations collection...');
       const technicianReservationsRef = collection(db, "technicianreservations");
       await addDoc(technicianReservationsRef, {
@@ -145,9 +145,30 @@ function ContactTechnician({ user }) {
         serviceDate: new Date().toISOString().split('T')[0], // Add service date for consistency with service center bookings
         serviceTime: new Date().toLocaleTimeString() // Add service time for consistency
       });
-      
+
       console.log('Booking also saved to technicianreservations');
-      alert('Your booking request has been sent to the technician!');
+      
+      // Calculate payment amount for technician service using our helper function
+      const { hourlyRate, dailyRate, formattedDailyRate } = calculateDailyRate(technician, 'technician');
+      
+      console.log(`Calculated daily rate: $${formattedDailyRate} based on hourly rate of $${hourlyRate}`);
+
+      // Navigate to payment page
+      navigate('/payment', {
+        state: {
+          checkoutData: {
+            fullName: formData.name,
+            email: formData.email,
+            address: formData.address || 'Not specified',
+            serviceType: 'Technician Visit',
+            serviceDate: new Date().toLocaleDateString(),
+            technicianName: technician.name || 'Technician',
+            bookingId: newBookingRef.id,
+            hourlyRate: hourlyRate
+          },
+          total: formattedDailyRate
+        }
+      });
       
       // Reset form
       setFormData({

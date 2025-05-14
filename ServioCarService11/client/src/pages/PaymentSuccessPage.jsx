@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircleIcon, DocumentTextIcon, HomeIcon } from '@heroicons/react/24/outline';
-import Footer from '../components/Footer';
-import Header from '../components/Header';
 
 function PaymentSuccessPage() {
   const location = useLocation();
@@ -50,11 +48,8 @@ function PaymentSuccessPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white font-sans">
-      {/* Header */}
-      <Header />
-
       {/* Main Content */}
-      <main className="flex-1 pt-20">
+      <main className="flex-1 pt-8">
         <motion.section
           variants={containerVariants}
           initial="hidden"
@@ -131,6 +126,16 @@ function PaymentSuccessPage() {
                       <h3 className="text-sm font-semibold text-gray-400 font-[Raleway]">Payment Date</h3>
                       <p className="font-[Open Sans] text-white">{formatDate(orderDetails.paymentDate)}</p>
                     </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-400 font-[Raleway]">Payment Method</h3>
+                      <p className="font-[Open Sans] text-white">{orderDetails.paymentMethod || "Credit Card"}</p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-400 font-[Raleway]">Payment Status</h3>
+                      <p className="font-[Open Sans] text-green-400">{orderDetails.paymentStatus || "Completed"}</p>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -156,8 +161,50 @@ function PaymentSuccessPage() {
                   </div>
                   
                   <div className="border-t border-gray-700 pt-4 mt-4">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold font-[Raleway]">Total:</span>
+                    {orderDetails.serviceType && (
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-[Open Sans] text-gray-300">Service Type:</span>
+                        <span className="font-[Raleway] text-white">{orderDetails.serviceType}</span>
+                      </div>
+                    )}
+                    
+                    {orderDetails.serviceDate && (
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-[Open Sans] text-gray-300">Service Date:</span>
+                        <span className="font-[Raleway] text-white">{orderDetails.serviceDate}</span>
+                      </div>
+                    )}
+                    
+                    {orderDetails.serviceTime && (
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-[Open Sans] text-gray-300">Service Time:</span>
+                        <span className="font-[Raleway] text-white">{orderDetails.serviceTime}</span>
+                      </div>
+                    )}
+                    
+                    {orderDetails.serviceCenterName && (
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-[Open Sans] text-gray-300">Service Center:</span>
+                        <span className="font-[Raleway] text-white">{orderDetails.serviceCenterName}</span>
+                      </div>
+                    )}
+                    
+                    {orderDetails.technicianName && (
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-[Open Sans] text-gray-300">Technician:</span>
+                        <span className="font-[Raleway] text-white">{orderDetails.technicianName}</span>
+                      </div>
+                    )}
+                    
+                    {orderDetails.hourlyRate && (
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-[Open Sans] text-gray-300">Hourly Rate:</span>
+                        <span className="font-[Raleway] text-white">${orderDetails.hourlyRate}/hour</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between items-center mt-4 border-t border-gray-700 pt-4">
+                      <span className="font-semibold font-[Raleway]">Total (8 hours):</span>
                       <span className="font-bold text-xl text-green-500">${orderDetails.total}</span>
                     </div>
                     <p className="text-green-400 text-sm mt-2 font-[Open Sans]">Paid Successfully</p>
@@ -183,9 +230,6 @@ function PaymentSuccessPage() {
           </motion.div>
         </motion.section>
       </main>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

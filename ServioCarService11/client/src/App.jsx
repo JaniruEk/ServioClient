@@ -58,6 +58,7 @@ import ReportAndAnalyse from "./ServiceCenetrs/Report&Analyse";
 
 // Components
 import UserProfile from "./components/UserProfile";
+import ChatWidget from "./components/ChatWidget";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -434,6 +435,8 @@ function App() {
         />
       </Routes>
       
+      {/* Chat Widget - Only shown when user is logged in */}
+      <ChatWidget isAuthenticated={!!user} />
     </Router>
   );
 }

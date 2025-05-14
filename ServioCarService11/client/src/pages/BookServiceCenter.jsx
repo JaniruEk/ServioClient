@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bars3Icon } from '@heroicons/react/24/solid';
 import Footer from '../components/Footer';
 import { signOut } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth, calculateDailyRate } from '../firebase';
 import OwnerSidebar from '../components/OwnerSidebar';
 
 function BookServiceCenter({ user }) {
@@ -42,28 +42,64 @@ function BookServiceCenter({ user }) {
     setShowServiceCenterDropdown(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.serviceCenter) {
       alert('Please select a service center before booking.');
       return;
     }
-    // Simulate form submission (e.g., API call)
-    console.log('Booking submitted:', formData);
-    alert('Your service center booking has been submitted!');
-    setFormData({
-      serviceCenter: '',
-      name: '',
-      email: '',
-      contactNumber: '',
-      vehicleMake: '',
-      vehicleModel: '',
-      vehicleYear: '',
-      serviceType: '',
-      serviceDate: '',
-      serviceTime: '',
-      message: '',
-    });
+    
+    try {
+      // Simulate form submission (creating booking)
+      console.log('Booking submitted:', formData);
+      
+      // Extract service center name from the selection (format: 'Name - Address')
+      const serviceCenterName = formData.serviceCenter.split(' - ')[0];
+      
+      // In a real implementation, you would save to Firestore here
+      // Create booking object
+      const bookingData = {
+        serviceCenterName: serviceCenterName,
+        name: formData.name,
+        email: formData.email,
+        contactNumber: formData.contactNumber,
+        vehicleMake: formData.vehicleMake,
+        vehicleModel: formData.vehicleModel,
+        vehicleYear: formData.vehicleYear,
+        serviceType: formData.serviceType,
+        serviceDate: formData.serviceDate,
+        serviceTime: formData.serviceTime,
+        message: formData.message || "",
+        status: 'Pending',
+        bookingType: 'service-center',
+        createdAt: new Date().toISOString()
+      };
+      
+      // Calculate payment amount using our helper function
+      // Since we don't have actual service center data, just pass an empty object to use default rate
+      const { hourlyRate, dailyRate, formattedDailyRate } = calculateDailyRate({}, 'serviceCenter');
+      
+      console.log(`Calculated daily rate: $${formattedDailyRate} based on hourly rate of $${hourlyRate}`);
+      
+      // Navigate to payment page with booking details
+      navigate('/payment', {
+        state: {
+          checkoutData: {
+            fullName: formData.name,
+            email: formData.email,
+            serviceType: formData.serviceType,
+            serviceDate: formData.serviceDate,
+            serviceTime: formData.serviceTime,
+            serviceCenterName: serviceCenterName,
+            hourlyRate: hourlyRate
+          },
+          total: formattedDailyRate
+        }
+      });
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      alert('There was an error submitting your booking. Please try again.');
+    }
   };
 
   const toggleSidebar = () => {

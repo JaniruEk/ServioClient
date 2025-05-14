@@ -66,7 +66,9 @@ const TechnicianDashboard = ({ user }) => {
   const [recentJobs, setRecentJobs] = useState([]);  const [performanceData, setPerformanceData] = useState({
     efficiency: 0,
     customerSatisfaction: 0,
-    earnings: 0
+    earnings: 0,
+    hourlyRate: 95, // Default hourly rate
+    dailyRate: 760  // Default daily rate (95 * 8)
     // Weekly performance data completely removed
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -161,13 +163,21 @@ const TechnicianDashboard = ({ user }) => {
               (Math.random() * 1.5 + 3.5) : // Simulate ratings between 3.5 and 5.0
               4.5; // Default rating
             
-            // Calculate simulated earnings based on completed jobs
-            const averageJobPrice = 150; // Assume average job costs $150
-            const totalEarnings = completedCount * averageJobPrice;
-              setPerformanceData({
+            // Get hourly rate from user data or use default
+            const hourlyRate = userDocSnap.data()?.hourlyRate || 95; // Default technician rate
+            
+            // Calculate daily rate (8 hours) following the same pattern as calculateDailyRate
+            const dailyRate = hourlyRate * 8;
+            
+            // Calculate simulated earnings based on completed jobs and daily rate
+            const totalEarnings = completedCount * dailyRate;
+              
+            setPerformanceData({
               efficiency: completedCount / (formattedJobs.length || 1) * 100,
               customerSatisfaction: satisfactionRating,
-              earnings: totalEarnings
+              earnings: totalEarnings,
+              hourlyRate: hourlyRate, // Store hourly rate for display
+              dailyRate: dailyRate // Store daily rate for display
               // Weekly performance data completely removed
             });
           } else {            // No reservations found, use demo data with completed jobs
@@ -494,6 +504,9 @@ const TechnicianDashboard = ({ user }) => {
                 <CurrencyDollarIcon className="h-10 w-10 text-green-500 mb-2" />
                 <p className="text-xl font-bold">${performanceData.earnings.toLocaleString()}</p>
                 <p className="font-[Open Sans] text-gray-300">Total Earnings</p>
+                <div className="mt-2 text-sm text-gray-400">
+                  <span>${performanceData.hourlyRate}/hr × 8 hrs = ${performanceData.dailyRate}/day</span>
+                </div>
               </motion.div>
               
               <motion.div

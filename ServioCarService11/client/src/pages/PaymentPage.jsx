@@ -2,14 +2,38 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CreditCardIcon, LockClosedIcon } from '@heroicons/react/24/outline';
-import Footer from '../components/Footer';
-import Header from '../components/Header';
-import { PaymentService } from '../services/PaymentService';
 
 function PaymentPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { checkoutData, total } = location.state || { checkoutData: {}, total: '0.00' };
+  
+  // Extract checkout data and ensure total is properly formatted
+  const { checkoutData = {} } = location.state || {};
+  
+  // Calculate the total based on service type: $75 for technician requests, $100 for service center requests
+  let total = '0.00';
+  if (location.state) {
+    if (checkoutData.serviceType === 'Technician Visit' || 
+        (location.state.checkoutData && location.state.checkoutData.serviceType === 'Technician Visit') ||
+        checkoutData.technicianName || 
+        (location.state.checkoutData && location.state.checkoutData.technicianName)) {
+      console.log('Charging fixed rate for technician service: $75.00');
+      total = '75.00';
+    } else {
+      // Default to service center rate
+      console.log('Charging fixed rate for service center service: $100.00');
+      total = '100.00';
+    }
+  }
+  
+  // Log values for debugging
+  console.log('Location state:', location.state);
+  console.log('Checkout data:', checkoutData);
+  console.log('Total:', total);
+  console.log('Hourly rate from checkoutData:', checkoutData.hourlyRate);
+  console.log('Hourly rate from location.state.checkoutData:', 
+    location.state && location.state.checkoutData ? location.state.checkoutData.hourlyRate : 'Not available');
+  console.log('Total from location.state:', location.state ? location.state.total : 'Not available');
   
   const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, loading, success, error
   const [errorMessage, setErrorMessage] = useState('');
@@ -69,18 +93,22 @@ function PaymentPage() {
     try {
       setPaymentStatus('loading');
       
+      // Ensure total is a valid number
+      const validTotal = isNaN(parseFloat(total)) ? 0 : parseFloat(total);
+      console.log(`Processing payment for amount: $${validTotal}`);
+      
       // Normally we would use Stripe Elements here
       // This is a simplified mock implementation
       await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
       
       // Call our payment service
       const paymentData = {
-        amount: parseFloat(total) * 100, // Convert to cents for Stripe
-        email: checkoutData.email,
+        amount: validTotal * 100, // Convert to cents for Stripe
+        email: checkoutData.email || 'customer@example.com',
         description: 'Servio Car Service Payment',
         metadata: { 
-          customer: checkoutData.fullName,
-          address: checkoutData.address
+          customer: checkoutData.fullName || 'Customer',
+          address: checkoutData.address || 'N/A'
         }
       };
       
@@ -96,7 +124,9 @@ function PaymentPage() {
             orderDetails: {
               ...checkoutData,
               total,
-              paymentDate: new Date().toISOString()
+              paymentDate: new Date().toISOString(),
+              paymentMethod: "Credit Card",
+              paymentStatus: "Completed"
             }
           }
         });
@@ -118,11 +148,8 @@ function PaymentPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white font-sans">
-      {/* Header */}
-      <Header />
-
       {/* Main Content */}
-      <main className="flex-1 pt-20">
+      <main className="flex-1 pt-8">
         <motion.section
           variants={containerVariants}
           initial="hidden"
@@ -159,9 +186,48 @@ function PaymentPage() {
                   ))}
                 </div>
                 <div className="border-t border-gray-700 pt-4 mt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold font-[Raleway]">Total:</span>
+                  {checkoutData.serviceType && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-[Open Sans] text-gray-300">Service Type:</span>
+                      <span className="font-[Raleway] text-white">{checkoutData.serviceType}</span>
+                    </div>
+                  )}
+                  {checkoutData.serviceDate && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-[Open Sans] text-gray-300">Service Date:</span>
+                      <span className="font-[Raleway] text-white">{checkoutData.serviceDate}</span>
+                    </div>
+                  )}
+                  {checkoutData.serviceTime && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-[Open Sans] text-gray-300">Service Time:</span>
+                      <span className="font-[Raleway] text-white">{checkoutData.serviceTime}</span>
+                    </div>
+                  )}
+                  {checkoutData.serviceCenterName && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-[Open Sans] text-gray-300">Service Center:</span>
+                      <span className="font-[Raleway] text-white">{checkoutData.serviceCenterName}</span>
+                    </div>
+                  )}
+                  {checkoutData.technicianName && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-[Open Sans] text-gray-300">Technician:</span>
+                      <span className="font-[Raleway] text-white">{checkoutData.technicianName}</span>
+                    </div>
+                  )}
+                  {checkoutData.hourlyRate && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-[Open Sans] text-gray-300">Hourly Rate:</span>
+                      <span className="font-[Raleway] text-white">${checkoutData.hourlyRate}/hour</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center mt-4 border-t border-gray-700 pt-4">
+                    <span className="font-semibold font-[Raleway]">Total (8 hours):</span>
                     <span className="font-bold text-xl text-red-500">${total}</span>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-2 italic">
+                    *Daily rate calculated as 8 hours at the hourly rate.
                   </div>
                 </div>
                 
@@ -287,9 +353,6 @@ function PaymentPage() {
           </motion.div>
         </motion.section>
       </main>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

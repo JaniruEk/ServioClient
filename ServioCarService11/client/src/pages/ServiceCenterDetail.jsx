@@ -14,7 +14,7 @@ import {
   CalendarIcon
 } from '@heroicons/react/24/solid';
 import { collection, addDoc, doc, setDoc, getFirestore } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, calculateDailyRate } from '../firebase';
 import Footer from '../components/Footer';
 import OwnerSidebar from '../components/OwnerSidebar';
 
@@ -328,24 +328,29 @@ function ServiceCenterDetail({ user }) {
       });
       
       console.log('Booking also saved to servicereservations');
-      alert('Your booking has been submitted successfully!');
       
-      // Reset form
-      setBookingFormData({
-        name: '',
-        email: '',
-        contactNumber: '',
-        vehicleMake: '',
-        vehicleModel: '',
-        vehicleYear: '',
-        serviceType: '',
-        serviceDate: '',
-        serviceTime: '',
-        message: '',
+      // Calculate payment amount using our helper function
+      const { hourlyRate, dailyRate, formattedDailyRate } = calculateDailyRate(serviceCenter, 'serviceCenter');
+      
+      console.log(`Calculated daily rate: $${formattedDailyRate} based on hourly rate of $${hourlyRate}`);
+      
+      // Navigate to payment page with booking details
+      navigate('/payment', {
+        state: {
+          checkoutData: {
+            fullName: bookingFormData.name,
+            email: bookingFormData.email,
+            serviceType: bookingFormData.serviceType,
+            serviceDate: bookingFormData.serviceDate,
+            serviceTime: bookingFormData.serviceTime,
+            serviceCenterName: serviceCenter.name,
+            bookingId: docRef.id,
+            hourlyRate: hourlyRate
+          },
+          total: formattedDailyRate
+        }
       });
-      
-      // Navigate back to overview tab
-      setActiveTab('overview');    } catch (error) {
+    } catch (error) {
       console.error("Error in booking process:", error);
       let errorMessage = 'An error occurred while submitting your booking.';
       
