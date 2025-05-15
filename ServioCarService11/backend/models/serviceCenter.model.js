@@ -1,8 +1,7 @@
 /**
  * Service Center Model - Defines the structure and validation of service center data
  */
-class ServiceCenterModel {
-  constructor(data = {}) {
+class ServiceCenterModel {  constructor(data = {}) {
     this.id = data.id || null;
     this.userId = data.userId || null; // Firebase Auth user ID
     this.name = data.name || '';
@@ -13,6 +12,9 @@ class ServiceCenterModel {
     this.state = data.state || '';
     this.zipCode = data.zipCode || '';
     this.description = data.description || '';
+    this.certification = data.certification || '';
+    this.website = data.website || '';
+    this.serviceTypes = data.serviceTypes || [];
     this.services = data.services || [];
     this.operatingHours = data.operatingHours || {
       monday: { open: '09:00', close: '18:00', isClosed: false },
@@ -31,7 +33,6 @@ class ServiceCenterModel {
     this.createdAt = data.createdAt || new Date().toISOString();
     this.updatedAt = data.updatedAt || new Date().toISOString();
   }
-
   // Convert to Firestore document data
   toFirestore() {
     return {
@@ -44,6 +45,9 @@ class ServiceCenterModel {
       state: this.state,
       zipCode: this.zipCode,
       description: this.description,
+      certification: this.certification,
+      website: this.website,
+      serviceTypes: this.serviceTypes,
       services: this.services,
       operatingHours: this.operatingHours,
       technicians: this.technicians,

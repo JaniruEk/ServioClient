@@ -56,6 +56,7 @@ import ServiceCenterPendingJob from "./ServiceCenetrs/PendingJob";
 import SparePartsInventory from "./ServiceCenetrs/SparePartsInventory";
 import ReportAndAnalyse from "./ServiceCenetrs/Report&Analyse";
 import ServiceCenterEditProfile from "./ServiceCenetrs/EditProfile";
+import ProfileTester from "./ServiceCenetrs/ProfileTester";
 
 // Components
 import UserProfile from "./components/UserProfile";
@@ -432,12 +433,19 @@ function App() {
               <ReportAndAnalyse />
             </ProtectedRoute>
           }
-        />
-        <Route
+        />        <Route
           path="/service-center/edit-profile"
           element={
             <ProtectedRoute allowedCategories={["service-center"]}>
               <ServiceCenterEditProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/service-center/profile-tester"
+          element={
+            <ProtectedRoute allowedCategories={["service-center"]}>
+              <ProfileTester />
             </ProtectedRoute>
           }
         />

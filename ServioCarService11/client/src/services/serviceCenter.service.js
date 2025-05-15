@@ -55,36 +55,89 @@ class ServiceCenterService {
       };
     }
   }
-  
-  /**
+    /**
    * Update service center profile
+   * @param {Object} serviceCenterData - The service center profile data to update
+   * @return {Object} Response object with success status and data
    */
   async updateServiceCenterProfile(serviceCenterData) {
     try {
+      // First check if backend is available with a short timeout
+      try {
+        await axios.get(`${API_URL}/health-check`, { timeout: 2000 }).catch(() => {
+          // If health check endpoint doesn't exist, try another endpoint
+          return axios.get(`${API_URL}/service-centers`, { timeout: 2000 });
+        });
+      } catch (err) {
+        console.warn('Backend server appears to be offline:', err.message);
+        return { 
+          success: false, 
+          error: 'Backend server unavailable. Profile updated in Firebase only.',
+          isNetworkError: true
+        };
+      }
+      
       const user = auth.currentUser;
       if (!user) {
         return { success: false, error: 'User not authenticated' };
       }
-        const token = await getIdToken(user);
+
+      // Validate essential data before sending to server
+      if (!serviceCenterData.name || !serviceCenterData.email) {
+        return { 
+          success: false, 
+          error: 'Name and email are required fields' 
+        };
+      }
+      
+      const token = await getIdToken(user);
       const response = await axios.put(`${API_URL}/service-centers/profile`, serviceCenterData, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        timeout: 5000 // 5 seconds timeout
+        timeout: 8000 // 8 seconds timeout to allow more time for update
       });
       
-      return { success: true, data: response.data };
+      if (response.data && response.data.success === false) {
+        return {
+          success: false,
+          error: response.data.message || 'Server returned failure status'
+        };
+      }
+      
+      return { success: true, data: response.data.data || response.data };
     } catch (error) {
       console.error('Error updating service center profile:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.message || error.message,
-        isNetworkError: error.message && (
-          error.message.includes('Network Error') || 
-          error.message.includes('timeout') || 
-          error.message.includes('ECONNREFUSED')
-        )
-      };
+      
+      // More detailed error handling
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        return {
+          success: false,
+          error: error.response.data?.message || `Server error: ${error.response.status}`,
+          statusCode: error.response.status
+        };
+      } else if (error.request) {
+        // The request was made but no response was received
+        return { 
+          success: false, 
+          error: 'No response received from server. Please try again later.',
+          isNetworkError: true
+        };
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        return { 
+          success: false, 
+          error: error.message || 'An unknown error occurred',
+          isNetworkError: error.message && (
+            error.message.includes('Network Error') || 
+            error.message.includes('timeout') || 
+            error.message.includes('ECONNREFUSED')
+          )
+        };
+      }
     }
   }
   /**

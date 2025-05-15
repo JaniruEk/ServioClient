@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import {
   UserIcon,
   EnvelopeIcon,
@@ -14,12 +16,13 @@ import {
   XMarkIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import Footer from "../components/Footer";
 import ServiceCenterSidebar from "../components/ServiceCenterSidebar";
 import { onAuthStateChanged } from "firebase/auth";
 import serviceCenterService from "../services/serviceCenter.service";
+import { showSuccess, showError, showInfo, showWarning } from "../utils/notifications";
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -124,8 +127,7 @@ const EditProfile = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-  };
-  const handleSubmit = async (e) => {
+  };  const handleSubmit = async (e) => {
     e.preventDefault();
     setUpdating(true);
     setSuccessMessage("");
@@ -140,40 +142,78 @@ const EditProfile = () => {
           : []
       };
       
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formattedData.email)) {
+        showError("Please enter a valid email address");
+        setUpdating(false);
+        return;
+      }
+      
+      // Validate name
+      if (!formattedData.name || formattedData.name.trim().length < 2) {
+        showError("Please enter a valid business name");
+        setUpdating(false);
+        return;
+      }
+
+      let firebaseUpdateSuccess = false;
+      
+      // Show in-progress notification
+      showInfo("Updating your profile...");
+      
       // First update Firestore with the new data
       if (user) {
-        const userDocRef = doc(db, "users", user.uid);
-        
-        // Update the user document with the basic profile info
-        await updateDoc(userDocRef, {
-          name: formattedData.name,
-          phone: formattedData.phone,
-          address: formattedData.address,
-          certification: formattedData.certification,
-          description: formattedData.description,
-          serviceTypes: formattedData.serviceTypes,
-          website: formattedData.website,
-          updatedAt: new Date().toISOString()
-        });
-        
-        console.log("Firebase profile data updated successfully");
+        try {
+          const userDocRef = doc(db, "users", user.uid);
+          
+          // Update the user document with the basic profile info
+          await updateDoc(userDocRef, {
+            name: formattedData.name,
+            phone: formattedData.phone,
+            address: formattedData.address,
+            certification: formattedData.certification,
+            description: formattedData.description,
+            serviceTypes: formattedData.serviceTypes,
+            website: formattedData.website,
+            updatedAt: new Date().toISOString()
+          });
+          
+          console.log("Firebase profile data updated successfully");
+          firebaseUpdateSuccess = true;
+        } catch (firebaseError) {
+          console.error("Firebase update error:", firebaseError);
+          showError("Error updating profile in local database");
+          // Continue to backend update even if Firebase fails
+        }
       }
       
       // Then try to update the backend API service
       const response = await serviceCenterService.updateServiceCenterProfile(formattedData);
       
       if (response.success) {
+        showSuccess("Profile updated successfully!");
         setSuccessMessage("Profile updated successfully!");
         setServiceCenterData({...serviceCenterData, ...formattedData});
-      } else if (response.isNetworkError) {
+      } else if (response.isNetworkError && firebaseUpdateSuccess) {
         // If backend is unavailable, still show success since Firebase update worked
+        showWarning("Profile updated locally. Will sync with server when connection is restored.");
         setSuccessMessage("Profile updated locally. Will sync with server when connection is restored.");
         setServiceCenterData({...serviceCenterData, ...formattedData});
       } else {
         throw new Error(response.error || "Failed to update profile on server");
       }
+      
+      // Refresh user data after successful update
+      const userDocRef = doc(db, "users", user.uid);
+      const refreshedUserSnapshot = await getDoc(userDocRef);
+      if (refreshedUserSnapshot.exists()) {
+        setUserData(refreshedUserSnapshot.data());
+      }
+      
     } catch (error) {
       console.error("Error updating profile:", error);
+      showError(`Failed to update profile: ${error.message}`);
       setErrorMessage(`Failed to update profile: ${error.message}`);
     } finally {
       setUpdating(false);
@@ -185,9 +225,22 @@ const EditProfile = () => {
         }, 5000);
       }
     }
-  };
-  return (
+  };  return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-white">
+      {/* Toast notification container */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+      
       <div className="flex flex-1 relative">
         <ServiceCenterSidebar activePath="/service-center/edit-profile" />
 
